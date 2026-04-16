@@ -46,12 +46,11 @@ rule no-echo-unescaped-input {
   enabled true
   priority 90
   severity error
-  ASK write
+  LOG write
   IF path GLOB "**/*.php" AND content LINE_REGEX "echo\\s+\\$_(GET|POST|REQUEST|COOKIE|SERVER)"
   OR path GLOB "**/*.php" AND content LINE_REGEX "print\\s+\\$_(GET|POST|REQUEST|COOKIE|SERVER)"
   OR path GLOB "**/*.php" AND content LINE_REGEX "echo\\s+\\$_(GET|POST|REQUEST|COOKIE)\\['"
   MESSAGE "Echoing unsanitized user input enables reflected XSS. Always use htmlspecialchars($input, ENT_QUOTES, 'UTF-8') before outputting user-controlled data in HTML context."
-  PROMPT "Is this output going to an HTML page? If so, wrap the variable in htmlspecialchars() before echoing."
 }
 
 rule no-unserialize-user-input {
@@ -68,22 +67,20 @@ rule no-ssrf-php {
   enabled true
   priority 90
   severity error
-  ASK write
+  LOG write
   IF path GLOB "**/*.php" AND content LINE_REGEX "file_get_contents\\s*\\(\\s*\\$_(GET|POST|REQUEST)"
   OR path GLOB "**/*.php" AND content LINE_REGEX "curl_setopt.*CURLOPT_URL.*\\$_(GET|POST|REQUEST)"
   OR path GLOB "**/*.php" AND content LINE_REGEX "fopen\\s*\\(\\s*\\$_(GET|POST|REQUEST)"
   MESSAGE "Fetching URLs from user input enables Server-Side Request Forgery (SSRF). Validate that the URL is in an allowed whitelist and block internal/private IP ranges."
-  PROMPT "Is the URL validated against an allowlist of trusted domains? Block requests to 127.0.0.1, 169.254.x.x, 10.x.x.x, and 192.168.x.x ranges."
 }
 
 rule no-hardcoded-secrets-php {
   enabled true
   priority 90
   severity error
-  ASK write
+  LOG write
   IF path GLOB "**/*.php" AND content LINE_REGEX "(password|passwd|api_key|secret|token)\\s*=\\s*['\"][^'\"]{8,}['\"]"
   MESSAGE "Hardcoded secrets in PHP source code are exposed in version control. Use environment variables: getenv('DB_PASSWORD') or $_ENV['API_KEY']."
-  PROMPT "Is this a real credential? Move it to an environment variable or .env file (gitignored) and access via getenv()."
 }
 
 rule no-disabled-error-reporting {
